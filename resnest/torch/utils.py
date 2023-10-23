@@ -59,8 +59,7 @@ class AverageMeter(object):
 
     @property
     def avg(self):
-        avg = 0 if self.count == 0 else self.sum / self.count
-        return avg
+        return 0 if self.count == 0 else self.sum / self.count
 
 
 def torch_dist_sum(gpu, *args):
@@ -79,19 +78,17 @@ def torch_dist_sum(gpu, *args):
     return tensor_args
 
 def get_rank():
-    if torch.distributed.is_initialized():
-        rank = torch.distributed.get_rank()
-    else:
-        rank = 0
-    return rank
+    return (
+        torch.distributed.get_rank()
+        if torch.distributed.is_initialized()
+        else 0
+    )
 
 def master_only(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        if get_rank() == 0:
-            return func(*args, **kwargs)
-        else:
-            return None
+        return func(*args, **kwargs) if get_rank() == 0 else None
+
     return wrapper
 
 @master_only
@@ -122,7 +119,7 @@ class LR_Scheduler(object):
         self.quiet = quiet
         self.logger = logger
         if not quiet:
-            msg = 'Using {} LR scheduler with warm-up epochs of {}!'.format(self.mode, warmup_epochs)
+            msg = f'Using {self.mode} LR scheduler with warm-up epochs of {warmup_epochs}!'
             if self.logger:
                 self.logger.info(msg)
             else:

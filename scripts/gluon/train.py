@@ -366,17 +366,9 @@ def train_gluon():
         trainer.load_states(args.resume_states)
 
     # Create loss function and train metric
-    if args.label_smoothing or args.mixup:
-        sparse_label_loss = False
-    else:
-        sparse_label_loss = True
-
+    sparse_label_loss = not args.label_smoothing and not args.mixup
     loss_fn = gluon.loss.SoftmaxCrossEntropyLoss(sparse_label=sparse_label_loss)
-    if args.mixup:
-        train_metric = mx.metric.RMSE()
-    else:
-        train_metric = mx.metric.Accuracy()
-
+    train_metric = mx.metric.RMSE() if args.mixup else mx.metric.Accuracy()
     def mixup_transform(label, classes, lam=1, eta=0.0):
         if isinstance(label, mx.nd.NDArray):
             label = [label]
@@ -412,10 +404,7 @@ def train_gluon():
                     lam = 1
                 data = [lam*X + (1-lam)*X[::-1] for X in data]
 
-                if args.label_smoothing:
-                    eta = 0.1
-                else:
-                    eta = 0.0
+                eta = 0.1 if args.label_smoothing else 0.0
                 label = mixup_transform(label, num_classes, lam, eta)
 
             elif args.label_smoothing:

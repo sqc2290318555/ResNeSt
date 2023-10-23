@@ -271,28 +271,15 @@ class ResNet(HybridBlock):
                                                     ceil_mode=True, count_include_pad=False))
                     downsample.add(nn.Conv2D(channels=planes * block.expansion, kernel_size=1,
                                              strides=1, use_bias=False, in_channels=self.inplanes))
-                    downsample.add(norm_layer(in_channels=planes * block.expansion,
-                                              **self.norm_kwargs))
                 else:
                     downsample.add(nn.Conv2D(channels=planes * block.expansion,
                                              kernel_size=1, strides=strides, use_bias=False,
                                              in_channels=self.inplanes))
-                    downsample.add(norm_layer(in_channels=planes * block.expansion,
-                                              **self.norm_kwargs))
-
+                downsample.add(norm_layer(in_channels=planes * block.expansion,
+                                          **self.norm_kwargs))
         layers = nn.HybridSequential(prefix='layers%d_'%stage_index)
         with layers.name_scope():
-            if dilation in (1, 2):
-                layers.add(block(planes, cardinality=self.cardinality,
-                                 bottleneck_width=self.bottleneck_width,
-                                 strides=strides, dilation=pre_dilation,
-                                 downsample=downsample, previous_dilation=dilation,
-                                 norm_layer=norm_layer, norm_kwargs=self.norm_kwargs,
-                                 last_gamma=last_gamma, dropblock_prob=dropblock_prob,
-                                 input_size=input_size, use_splat=use_splat, avd=avd, avd_first=self.avd_first,
-                                 radix=self.radix, in_channels=self.inplanes,
-                                 split_drop_ratio=self.split_drop_ratio))
-            elif dilation == 4:
+            if dilation in (1, 2, 4):
                 layers.add(block(planes, cardinality=self.cardinality,
                                  bottleneck_width=self.bottleneck_width,
                                  strides=strides, dilation=pre_dilation,
@@ -303,11 +290,11 @@ class ResNet(HybridBlock):
                                  radix=self.radix, in_channels=self.inplanes,
                                  split_drop_ratio=self.split_drop_ratio))
             else:
-                raise RuntimeError("=> unknown dilation size: {}".format(dilation))
+                raise RuntimeError(f"=> unknown dilation size: {dilation}")
 
             input_size = _update_input_size(input_size, strides)
             self.inplanes = planes * block.expansion
-            for i in range(1, blocks):
+            for _ in range(1, blocks):
                 layers.add(block(planes, cardinality=self.cardinality,
                                  bottleneck_width=self.bottleneck_width, dilation=dilation,
                                  previous_dilation=dilation, norm_layer=norm_layer,

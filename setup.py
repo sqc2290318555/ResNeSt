@@ -26,11 +26,11 @@ except Exception:
 
 def create_version_file():
     global version, cwd
-    print('-- Building version ' + version)
+    print(f'-- Building version {version}')
     version_path = os.path.join(cwd, 'resnest', 'version.py')
     with open(version_path, 'w') as f:
         f.write('"""This is resnest version file."""\n')
-        f.write("__version__ = '{}'\n".format(version))
+        f.write(f"__version__ = '{version}'\n")
 
 requirements = [
     'numpy',

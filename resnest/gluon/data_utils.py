@@ -26,13 +26,11 @@ class ToPIL(object):
     """Convert image from ndarray format to PIL
     """
     def __call__(self, img):
-        x = Image.fromarray(img.asnumpy())
-        return x
+        return Image.fromarray(img.asnumpy())
 
 class ToNDArray(object):
     def __call__(self, img):
-        x = mx.nd.array(np.array(img), mx.cpu(0))
-        return x
+        return mx.nd.array(np.array(img), mx.cpu(0))
 
 class AugmentationBlock(Block):
     r"""

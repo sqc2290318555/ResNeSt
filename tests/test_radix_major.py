@@ -93,9 +93,9 @@ def sync_weigths(m1, m2):
 
 def _AssertTensorClose(a, b, atol=1e-3, rtol=1e-3):
     npa, npb = a.cpu().detach().numpy(), b.cpu().detach().numpy()
-    assert np.allclose(npa, npb, atol=atol), \
-        'Tensor close check failed\n{}\n{}\nadiff={}, rdiff={}'.format(
-            a, b, np.abs(npa - npb).max(), np.abs((npa - npb) / np.fmax(npa, 1e-5)).max())
+    assert np.allclose(
+        npa, npb, atol=atol
+    ), f'Tensor close check failed\n{a}\n{b}\nadiff={np.abs(npa - npb).max()}, rdiff={np.abs((npa - npb) / np.fmax(npa, 1e-05)).max()}'
 
 def test_radix_major():
     device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')

@@ -37,8 +37,7 @@ def parse_args():
                         help='training data type')
     parser.add_argument('--dilation', type=int, default=1,
                         help='network dilation. default 1 (no-dilation)')
-    opt = parser.parse_args()
-    return opt
+    return parser.parse_args()
 
 def test(network, ctx, val_data, batch_fn):
     acc_top1 = mx.metric.Accuracy()

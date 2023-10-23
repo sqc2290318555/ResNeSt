@@ -51,8 +51,7 @@ class Options():
         self.parser = parser
 
     def parse(self):
-        args = self.parser.parse_args()
-        return args
+        return self.parser.parse_args()
 
 
 def main():
@@ -74,9 +73,13 @@ def main():
     ])
     valset = ImageNetDataset(transform=transform_val, train=False)
     val_loader = torch.utils.data.DataLoader(
-        valset, batch_size=args.batch_size, shuffle=False,
-        num_workers=args.workers, pin_memory=True if args.cuda else False)
-    
+        valset,
+        batch_size=args.batch_size,
+        shuffle=False,
+        num_workers=args.workers,
+        pin_memory=bool(args.cuda),
+    )
+
     # init the model
     model_kwargs = {}
 
@@ -91,21 +94,17 @@ def main():
 
     # checkpoint
     if args.verify:
-        if os.path.isfile(args.verify):
-            print("=> loading checkpoint '{}'".format(args.verify))
-            model.module.load_state_dict(torch.load(args.verify))
-        else:
-            raise RuntimeError ("=> no verify checkpoint found at '{}'".\
-                format(args.verify))
+        if not os.path.isfile(args.verify):
+            raise RuntimeError(f"=> no verify checkpoint found at '{args.verify}'")
+        print(f"=> loading checkpoint '{args.verify}'")
+        model.module.load_state_dict(torch.load(args.verify))
     elif args.resume is not None:
-        if os.path.isfile(args.resume):
-            print("=> loading checkpoint '{}'".format(args.resume))
-            checkpoint = torch.load(args.resume)
-            model.module.load_state_dict(checkpoint['state_dict'])
-        else:
-            raise RuntimeError ("=> no resume checkpoint found at '{}'".\
-                format(args.resume))
+        if not os.path.isfile(args.resume):
+            raise RuntimeError(f"=> no resume checkpoint found at '{args.resume}'")
 
+        print(f"=> loading checkpoint '{args.resume}'")
+        checkpoint = torch.load(args.resume)
+        model.module.load_state_dict(checkpoint['state_dict'])
     model.eval()
     top1 = AverageMeter()
     top5 = AverageMeter()
@@ -190,8 +189,7 @@ class AverageMeter(object):
 
     @property
     def avg(self):
-        avg = 0 if self.count == 0 else self.sum / self.count
-        return avg
+        return 0 if self.count == 0 else self.sum / self.count
 
 if __name__ == "__main__":
     main()

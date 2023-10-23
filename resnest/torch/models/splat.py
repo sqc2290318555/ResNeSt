@@ -80,7 +80,7 @@ class SplAtConv2d(Module):
                 attens = torch.split(atten, int(rchannel//self.radix), dim=1)
             else:
                 attens = torch.split(atten, rchannel//self.radix, dim=1)
-            out = sum([att*split for (att, split) in zip(attens, splited)])
+            out = sum(att*split for (att, split) in zip(attens, splited))
         else:
             out = atten * x
         return out.contiguous()
