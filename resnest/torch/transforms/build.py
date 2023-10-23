@@ -21,7 +21,6 @@ def imagenet(base_size=None, crop_size=224, rand_aug=False):
                           std=[0.229, 0.224, 0.225])
     base_size = base_size if base_size is not None else int(1.0 * crop_size / 0.875)
     train_transforms = []
-    val_transforms = []
     if rand_aug:
         from .autoaug import RandAugment
         train_transforms.append(RandAugment(2, 12))
@@ -34,11 +33,7 @@ def imagenet(base_size=None, crop_size=224, rand_aug=False):
         Lighting(0.1, _imagenet_pca['eigval'], _imagenet_pca['eigvec']),
         normalize,
     ])
-    val_transforms.extend([
-        ECenterCrop(crop_size),
-        ToTensor(),
-        normalize,
-    ])
+    val_transforms = [ECenterCrop(crop_size), ToTensor(), normalize]
     transform_train = Compose(train_transforms)
     transform_val = Compose(val_transforms)
     return transform_train, transform_val

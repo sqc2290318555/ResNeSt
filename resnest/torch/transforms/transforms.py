@@ -64,16 +64,12 @@ class ERandomCrop:
 
             if max_height * aspect_ratio > original_width:
                 max_height = (original_width + 0.5 - 1e-7) / aspect_ratio
-                max_height = int(max_height)
-                if max_height * aspect_ratio > original_width:
-                    max_height -= 1
+                max_height = max_height
+            if max_height * aspect_ratio > original_width:
+                max_height -= 1
 
-            if max_height > original_height:
-                max_height = original_height
-
-            if height >= max_height:
-                height = max_height
-
+            max_height = min(max_height, original_height)
+            height = min(height, max_height)
             height = int(round(random.uniform(height, max_height)))
             width = int(round(height * aspect_ratio))
             area = width * height

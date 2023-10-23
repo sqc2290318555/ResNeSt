@@ -79,7 +79,7 @@ class SplAtConv2d(Module):
 
         if self.radix > 1:
             attens = torch.split(atten, rchannel//self.radix, dim=1)
-            out = sum([att*split for (att, split) in zip(attens, splited)])
+            out = sum(att*split for (att, split) in zip(attens, splited))
         else:
             out = atten * x
         return out.contiguous()
@@ -177,7 +177,7 @@ class SplAtConv2d_dcn(Module):
 
         if self.radix > 1:
             attens = torch.split(atten, rchannel//self.radix, dim=1)
-            out = sum([att*split for (att, split) in zip(attens, splited)])
+            out = sum(att*split for (att, split) in zip(attens, splited))
         else:
             out = atten * x
         return out.contiguous()

@@ -57,8 +57,7 @@ class Options():
         self.parser = parser
 
     def parse(self):
-        args = self.parser.parse_args()
-        return args
+        return self.parser.parse_args()
 
 def main():
     args = Options().parse()
@@ -128,7 +127,7 @@ def main_worker(gpu, ngpus_per_node, args, cfg):
         valset, batch_size=cfg.TRAINING.TEST_BATCH_SIZE, shuffle=False,
         num_workers=cfg.TRAINING.WORKERS, pin_memory=True,
         sampler=val_sampler)
-    
+
     # init the model
     model_kwargs = {}
     if cfg.MODEL.FINAL_DROP > 0.0:
@@ -155,7 +154,11 @@ def main_worker(gpu, ngpus_per_node, args, cfg):
         for k, v in parameters:
             param_dict[k] = v
         bn_params = [v for n, v in param_dict.items() if ('bn' in n or 'bias' in n)]
-        rest_params = [v for n, v in param_dict.items() if not ('bn' in n or 'bias' in n)]
+        rest_params = [
+            v
+            for n, v in param_dict.items()
+            if 'bn' not in n and 'bias' not in n
+        ]
         if args.gpu == 0:
             logger.info(" Weight decay NOT applied to BN parameters ")
             logger.info(f'len(parameters): {len(list(model.parameters()))} = {len(bn_params)} + {len(rest_params)}')
@@ -266,7 +269,7 @@ def main_worker(gpu, ngpus_per_node, args, cfg):
 
     if args.export:
         if args.gpu == 0:
-            with PathManager.open(args.export + '.pth', "wb") as f:
+            with PathManager.open(f'{args.export}.pth', "wb") as f:
                 torch.save(model.module.state_dict(), f)
         return
 

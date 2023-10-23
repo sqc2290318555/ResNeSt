@@ -31,10 +31,7 @@ class SplitAttentionConv(HybridBlock):
         if USE_BN:
             self.bn1 = norm_layer(in_channels=inter_channels, **norm_kwargs)
         self.relu1 = Activation('relu')
-        if drop_ratio > 0:
-            self.drop = nn.Dropout(drop_ratio)
-        else:
-            self.drop = None
+        self.drop = nn.Dropout(drop_ratio) if drop_ratio > 0 else None
         self.fc2 = Conv2D(channels*radix, 1, in_channels=inter_channels, groups=self.cardinality)
         self.channels = channels
         self.rsoftmax = rSoftMax(radix, groups)
@@ -58,13 +55,11 @@ class SplitAttentionConv(HybridBlock):
             atten = self.drop(atten)
         atten = self.fc2(atten).reshape((0, self.radix, self.channels))
         atten = self.rsoftmax(atten).reshape((0, -1, 1, 1))
-        if self.radix > 1:
-            atten = F.split(atten, self.radix, axis=1)
-            outs = [F.broadcast_mul(att, split) for (att, split) in zip(atten, splited)]
-            out = sum(outs)
-        else:
-            out = F.broadcast_mul(atten, x)
-        return out
+        if self.radix <= 1:
+            return F.broadcast_mul(atten, x)
+        atten = F.split(atten, self.radix, axis=1)
+        outs = [F.broadcast_mul(att, split) for (att, split) in zip(atten, splited)]
+        return sum(outs)
 
 
 class rSoftMax(nn.HybridBlock):

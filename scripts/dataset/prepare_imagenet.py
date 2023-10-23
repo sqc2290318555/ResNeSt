@@ -29,23 +29,22 @@ def parse_args():
                         help="If build image record files.")
     parser.add_argument('--num-thread', type=int, default=1,
                         help="Number of threads to use when building image record file.")
-    args = parser.parse_args()
-    return args
+    return parser.parse_args()
 
 def check_file(filename, checksum, sha1):
     if not os.path.exists(filename):
-        raise ValueError('File not found: '+filename)
+        raise ValueError(f'File not found: {filename}')
     if checksum and not check_sha1(filename, sha1):
-        raise ValueError('Corrupted file: '+filename)
+        raise ValueError(f'Corrupted file: {filename}')
 
 def extract_train(tar_fname, target_dir, with_rec=False, num_thread=1):
     mkdir(target_dir)
     with tarfile.open(tar_fname) as tar:
-        print("Extracting "+tar_fname+"...")
+        print(f"Extracting {tar_fname}...")
         # extract each class one-by-one
         pbar = tqdm(total=len(tar.getnames()))
         for class_tar in tar:
-            pbar.set_description('Extract '+class_tar.name)
+            pbar.set_description(f'Extract {class_tar.name}')
             tar.extract(class_tar, target_dir)
             class_fname = os.path.join(target_dir, class_tar.name)
             class_dir = os.path.splitext(class_fname)[0]
@@ -58,7 +57,7 @@ def extract_train(tar_fname, target_dir, with_rec=False, num_thread=1):
 
 def extract_val(tar_fname, target_dir, with_rec=False, num_thread=1):
     mkdir(target_dir)
-    print('Extracting ' + tar_fname)
+    print(f'Extracting {tar_fname}')
     with tarfile.open(tar_fname) as tar:
         tar.extractall(target_dir)
     # build rec file before images are moved into subfolders

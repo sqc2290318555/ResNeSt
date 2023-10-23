@@ -302,7 +302,7 @@ def apply_augment(img, name, level):
 
 
 def rand_augment_list():  # 16 oeprations and their ranges
-    l = [
+    return [
         (AutoContrast, 0, 1),
         (Equalize, 0, 1),
         (Invert, 0, 1),
@@ -314,14 +314,12 @@ def rand_augment_list():  # 16 oeprations and their ranges
         (Contrast, 0.1, 1.9),
         (Brightness, 0.1, 1.9),
         (Sharpness, 0.1, 1.9),
-        (ShearX, 0., 0.3),
-        (ShearY, 0., 0.3),
+        (ShearX, 0.0, 0.3),
+        (ShearY, 0.0, 0.3),
         (CutoutAbs, 0, 40),
-        (TranslateXabs, 0., 100),
-        (TranslateYabs, 0., 100),
+        (TranslateXabs, 0.0, 100),
+        (TranslateYabs, 0.0, 100),
     ]
-
-    return l
 
 
 
@@ -353,16 +351,12 @@ class ERandomCrop:
 
             if max_height * aspect_ratio > original_width:
                 max_height = (original_width + 0.5 - 1e-7) / aspect_ratio
-                max_height = int(max_height)
-                if max_height * aspect_ratio > original_width:
-                    max_height -= 1
+                max_height = max_height
+            if max_height * aspect_ratio > original_width:
+                max_height -= 1
 
-            if max_height > original_height:
-                max_height = original_height
-
-            if height >= max_height:
-                height = max_height
-
+            max_height = min(max_height, original_height)
+            height = min(height, max_height)
             height = int(round(random.uniform(height, max_height)))
             width = int(round(height * aspect_ratio))
             area = width * height

@@ -101,11 +101,7 @@ class BasicBlock(ResNetBlockBase):
         out = F.relu_(out)
         out = self.conv2(out)
 
-        if self.shortcut is not None:
-            shortcut = self.shortcut(x)
-        else:
-            shortcut = x
-
+        shortcut = self.shortcut(x) if self.shortcut is not None else x
         out += shortcut
         out = F.relu_(out)
         return out
@@ -145,30 +141,29 @@ class BottleneckBlock(ResNetBlockBase):
         cardinality = num_groups
         group_width = int(bottleneck_channels * (bottleneck_width / 64.)) * cardinality 
 
-        if in_channels != out_channels:
-            if self.avg_down:
-                self.shortcut_avgpool = nn.AvgPool2d(kernel_size=stride, stride=stride, 
-                                                     ceil_mode=True, count_include_pad=False)
-                self.shortcut = Conv2d(
-                    in_channels,
-                    out_channels,
-                    kernel_size=1,
-                    stride=1,
-                    bias=False,
-                    norm=get_norm(norm, out_channels),
-                )
-            else:
-                self.shortcut = Conv2d(
-                    in_channels,
-                    out_channels,
-                    kernel_size=1,
-                    stride=stride,
-                    bias=False,
-                    norm=get_norm(norm, out_channels),
-                )
-        else:
+        if in_channels == out_channels:
             self.shortcut = None
 
+        elif self.avg_down:
+            self.shortcut_avgpool = nn.AvgPool2d(kernel_size=stride, stride=stride, 
+                                                 ceil_mode=True, count_include_pad=False)
+            self.shortcut = Conv2d(
+                in_channels,
+                out_channels,
+                kernel_size=1,
+                stride=1,
+                bias=False,
+                norm=get_norm(norm, out_channels),
+            )
+        else:
+            self.shortcut = Conv2d(
+                in_channels,
+                out_channels,
+                kernel_size=1,
+                stride=stride,
+                bias=False,
+                norm=get_norm(norm, out_channels),
+            )
         # The original MSRA ResNet models have stride in the first 1x1 conv
         # The subsequent fb.torch.resnet and Caffe2 ResNe[X]t implementations have
         # stride in the 3x3 conv
@@ -296,30 +291,29 @@ class DeformBottleneckBlock(ResNetBlockBase):
         cardinality = num_groups
         group_width = int(bottleneck_channels * (bottleneck_width / 64.)) * cardinality 
 
-        if in_channels != out_channels:
-            if self.avg_down:
-                self.shortcut_avgpool = nn.AvgPool2d(kernel_size=stride, stride=stride, 
-                                                     ceil_mode=True, count_include_pad=False)
-                self.shortcut = Conv2d(
-                    in_channels,
-                    out_channels,
-                    kernel_size=1,
-                    stride=1,
-                    bias=False,
-                    norm=get_norm(norm, out_channels),
-                )
-            else:
-                self.shortcut = Conv2d(
-                    in_channels,
-                    out_channels,
-                    kernel_size=1,
-                    stride=stride,
-                    bias=False,
-                    norm=get_norm(norm, out_channels),
-                )
-        else:
+        if in_channels == out_channels:
             self.shortcut = None
 
+        elif self.avg_down:
+            self.shortcut_avgpool = nn.AvgPool2d(kernel_size=stride, stride=stride, 
+                                                 ceil_mode=True, count_include_pad=False)
+            self.shortcut = Conv2d(
+                in_channels,
+                out_channels,
+                kernel_size=1,
+                stride=1,
+                bias=False,
+                norm=get_norm(norm, out_channels),
+            )
+        else:
+            self.shortcut = Conv2d(
+                in_channels,
+                out_channels,
+                kernel_size=1,
+                stride=stride,
+                bias=False,
+                norm=get_norm(norm, out_channels),
+            )
         stride_1x1, stride_3x3 = (stride, 1) if stride_in_1x1 else (1, stride)
 
         self.conv1 = Conv2d(
@@ -503,19 +497,15 @@ class BasicStem(nn.Module):
             x = self.conv1_2(x)
             x = F.relu_(x)
             x = self.conv1_3(x)
-            x = F.relu_(x)
         else:
             x = self.conv1(x)
-            x = F.relu_(x)
+        x = F.relu_(x)
         x = F.max_pool2d(x, kernel_size=3, stride=2, padding=1)
         return x
 
     @property
     def out_channels(self):
-        if self.deep_stem:
-            return self.conv1_3.out_channels
-        else:
-            return self.conv1.out_channels
+        return self.conv1_3.out_channels if self.deep_stem else self.conv1.out_channels
 
     @property
     def stride(self):
@@ -548,7 +538,7 @@ class ResNeSt(Backbone):
                 assert isinstance(block, ResNetBlockBase), block
                 curr_channels = block.out_channels
             stage = nn.Sequential(*blocks)
-            name = "res" + str(i + 2)
+            name = f"res{str(i + 2)}"
             self.add_module(name, stage)
             self.stages_and_names.append((stage, name))
             self._out_feature_strides[name] = current_stride = int(
@@ -572,7 +562,7 @@ class ResNeSt(Backbone):
         assert len(self._out_features)
         children = [x[0] for x in self.named_children()]
         for out_feature in self._out_features:
-            assert out_feature in children, "Available children: {}".format(", ".join(children))
+            assert out_feature in children, f'Available children: {", ".join(children)}'
 
     def forward(self, x):
         outputs = {}
@@ -610,8 +600,8 @@ def build_resnest_backbone(cfg, input_shape):
     """
 
     depth = cfg.MODEL.RESNETS.DEPTH
-    stem_width = {50: 32, 101: 64, 152: 64, 200: 64, 269: 64}[depth] 
-    radix = cfg.MODEL.RESNETS.RADIX 
+    stem_width = {50: 32, 101: 64, 152: 64, 200: 64, 269: 64}[depth]
+    radix = cfg.MODEL.RESNETS.RADIX
     deep_stem = cfg.MODEL.RESNETS.DEEP_STEM or (radix > 1)
 
     # need registration of new blocks/stems?
@@ -646,7 +636,7 @@ def build_resnest_backbone(cfg, input_shape):
     avg_down            = cfg.MODEL.RESNETS.AVG_DOWN or (radix > 1)
     bottleneck_width    = cfg.MODEL.RESNETS.BOTTLENECK_WIDTH
     # fmt: on
-    assert res5_dilation in {1, 2}, "res5_dilation cannot be {}.".format(res5_dilation)
+    assert res5_dilation in {1, 2}, f"res5_dilation cannot be {res5_dilation}."
 
     num_blocks_per_stage = {
         18: [2, 2, 2, 2],
@@ -723,7 +713,7 @@ def build_resnest_fpn_backbone(cfg, input_shape: ShapeSpec):
     bottom_up = build_resnest_backbone(cfg, input_shape)
     in_features = cfg.MODEL.FPN.IN_FEATURES
     out_channels = cfg.MODEL.FPN.OUT_CHANNELS
-    backbone = FPN(
+    return FPN(
         bottom_up=bottom_up,
         in_features=in_features,
         out_channels=out_channels,
@@ -731,4 +721,3 @@ def build_resnest_fpn_backbone(cfg, input_shape: ShapeSpec):
         top_block=LastLevelMaxPool(),
         fuse_type=cfg.MODEL.FPN.FUSE_TYPE,
     )
-    return backbone

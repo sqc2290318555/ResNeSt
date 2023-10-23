@@ -13,8 +13,7 @@ def parse_args():
         epilog='Example: python mscoco.py --download-dir ~/mscoco',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('--download-dir', type=str, default=None, help='dataset directory on disk')
-    args = parser.parse_args()
-    return args
+    return parser.parse_args()
 
 def download_coco(path, overwrite=False):
     _DOWNLOAD_URLS = [
@@ -37,18 +36,23 @@ def download_coco(path, overwrite=False):
             with zipfile.ZipFile(filename) as zf:
                 zf.extractall(path=path)
         else:
-            shutil.move(filename, os.path.join(path, 'annotations/'+os.path.basename(filename)))
+            shutil.move(
+                filename,
+                os.path.join(
+                    path, f'annotations/{os.path.basename(filename)}'
+                ),
+            )
 
 
 def install_coco_api():
     repo_url = "https://github.com/cocodataset/cocoapi"
-    os.system("git clone " + repo_url)
+    os.system(f"git clone {repo_url}")
     os.system("cd cocoapi/PythonAPI/ && python setup.py install")
     shutil.rmtree('cocoapi')
     try:
         import pycocotools
     except Exception:
-        print("Installing COCO API failed, please install it manually %s"%(repo_url))
+        print(f"Installing COCO API failed, please install it manually {repo_url}")
 
 
 if __name__ == '__main__':

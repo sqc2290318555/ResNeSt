@@ -87,11 +87,9 @@ class Trainer(DefaultTrainer):
             return PascalVOCDetectionEvaluator(dataset_name)
         elif evaluator_type == "lvis":
             return LVISEvaluator(dataset_name, output_dir=output_folder)
-        if len(evaluator_list) == 0:
+        if not evaluator_list:
             raise NotImplementedError(
-                "no Evaluator for the dataset {} with the type {}".format(
-                    dataset_name, evaluator_type
-                )
+                f"no Evaluator for the dataset {dataset_name} with the type {evaluator_type}"
             )
         elif len(evaluator_list) == 1:
             return evaluator_list[0]
@@ -111,7 +109,7 @@ class Trainer(DefaultTrainer):
             for name in cfg.DATASETS.TEST
         ]
         res = cls.test(cfg, model, evaluators)
-        res = OrderedDict({k + "_TTA": v for k, v in res.items()})
+        res = OrderedDict({f"{k}_TTA": v for k, v in res.items()})
         return res
 
 
